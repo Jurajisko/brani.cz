@@ -31,6 +31,7 @@
 
 <script setup>
 import { ref, defineEmits } from 'vue';
+import axios from 'axios';
 
 // Pripravené údaje pre novú objednávku
 const newOrder = ref({
@@ -61,10 +62,43 @@ const closeDialog = () => {
   emit('close');
 }
 
-// Funkcia na uloženie novej objednávky
+const isSubmitting = ref(false);
+
 const saveOrder = () => {
-  const orderData = { ...newOrder.value };
-  emit('save', orderData);
-  closeDialog();  // Zatvorí dialóg po uložení
-}
+  console.log('Ukladám objednávku'); // Kontrola spustenia
+
+  if (isSubmitting.value) return;  // Zabráni ďalšiemu volaniu, ak sa práve odosiela
+
+  isSubmitting.value = true;
+
+  const orderData = {
+    customerId: newOrder.value.customerId,  // ID zákazníka
+    state: selectedStatus.value,            // Stav objednávky
+    items: [
+      {
+        id: Math.floor(Math.random() * 1000), // Generované ID pre položku
+        product: 'Sample Product',            // Názov produktu (môže byť dynamický)
+        name: newOrder.value.itemName,        // Názov položky z formulára
+        price: 100                            // Cena položky (môže byť dynamická)
+      }
+    ]
+  };
+  
+  axios.post('http://localhost:3001/api/orders', orderData)
+    .then(response => {
+      console.log('Nová objednávka uložená:', response.data);
+      emit('save', response.data);  // Emit uložené objednávky
+      closeDialog();                // Zatvorenie dialógu
+    })
+    .catch(error => {
+      console.error('Chyba pri ukladaní objednávky:', error);
+    })
+    .finally(() => {
+      isSubmitting.value = false;  // Resetovanie po odoslaní
+    });
+};
+
+
+
+
 </script>

@@ -12,7 +12,6 @@
         <v-toolbar flat>
           <v-toolbar-title>Orders</v-toolbar-title>
           <v-spacer></v-spacer>
-          <!-- <v-btn color="primary" @click="createOrder">Přidat</v-btn> -->
           <v-btn color="primary" @click="openDialog">Přidat</v-btn>
         </v-toolbar>
       </template>
@@ -55,15 +54,8 @@ const headers = [
   { text: 'Name', value: 'items' },
   { text: 'Customer', value: 'customerId' },
   { text: 'State', value: 'state' },
-  { text: '', value: 'action' },
+  { text: 'Action', value: 'action', sortable: false },
 ];
-
-const states = {
-  pending: 'Vyřizuje se',
-  shipped: 'Posláno',
-  delivered: 'Doručeno',
-  canceled: 'Zrušeno',
-}
 
 // Random data for the table
 const items = computed(() => store.getters['orders/getOrders'])
@@ -73,14 +65,20 @@ const edit = (order) => {
 }
 
 const addOrder = (orderData) => {
+  console.log('Prijaté údaje pre novú objednávku:', orderData);
+  
   store.dispatch('orders/createOrder', orderData)
     .then(() => {
-      store.dispatch('orders/fetchOrders'); // Aktualizuje seznam objednávek
+      store.dispatch('orders/fetchOrders');
+      showSnack.value = true;
     })
     .catch((error) => {
       console.error('Error creating order:', error);
     });
+
+  closeDialog();
 };
+
 
 const createOrder = () => {
   // Simulácia vytvorenia novej objednávky
