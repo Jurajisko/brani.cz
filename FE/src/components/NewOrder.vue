@@ -7,9 +7,19 @@
 
       <v-card-text>
         <v-form @submit.prevent="saveOrder">
-          <v-text-field v-model="newOrder.customerId" label="ID zákazníka" required></v-text-field>
-          <v-text-field v-model="newOrder.itemName" label="Položka objednávky" required></v-text-field>
-          
+          <v-text-field 
+            v-model="newOrder.customerId" 
+            label="ID zákazníka" 
+            :error-messages="customerIdError"
+            required>
+          </v-text-field>
+          <v-text-field 
+            v-model="newOrder.itemName" 
+            label="Položka objednávky" 
+            :error-messages="itemNameError"
+            required>
+          </v-text-field>
+
           <!-- Dropdown for status order -->
           <v-select 
             v-model="selectedStatus" 
@@ -36,7 +46,7 @@ import { ref, defineEmits } from 'vue';
 const newOrder = ref({
   customerId: '',
   itemName: '',
-  state: 'pending' // defualut value
+  state: 'pending' // default value
 });
 
 // State of the new order
@@ -55,21 +65,53 @@ const emit = defineEmits(['close', 'save']);
 
 const showDialog = ref(true);
 
+// Error messages
+const customerIdError = ref('');
+const itemNameError = ref('');
+
+// Function to sanitize text inputs
+const sanitizeInput = (input) => {
+  const element = document.createElement('div');
+  element.innerText = input;
+  return element.innerHTML;
+};
+
 // Function for close dialog
 const closeDialog = () => {
   emit('close');
-}
+};
 
 // Function for saving order
 const saveOrder = () => {
+  // Reset error messages
+  customerIdError.value = '';
+  itemNameError.value = '';
+
   // Validation: check if all required fields are filled
+  let isValid = true;
+
+  // Check if customerId is empty
   if (!newOrder.value.customerId) {
-    alert("Prosím, zadajte ID zákazníka.");
-    return;
+    customerIdError.value = "Prosím, zadajte ID zákazníka.";
+    isValid = false;
+  }
+  // Check if customerId contains only numbers
+  else if (!/^\d+$/.test(newOrder.value.customerId)) {
+    customerIdError.value = "ID zákazníka môže obsahovať iba čísla.";
+    isValid = false;
   }
 
+  // Sanitize itemName input
+  newOrder.value.itemName = sanitizeInput(newOrder.value.itemName);
+
+  // Check if itemName is empty
   if (!newOrder.value.itemName) {
-    alert("Prosím, zadajte položku objednávky.");
+    itemNameError.value = "Prosím, zadajte položku objednávky.";
+    isValid = false;
+  }
+
+  // If form is not valid, don't submit
+  if (!isValid) {
     return;
   }
 
@@ -78,7 +120,7 @@ const saveOrder = () => {
     state: selectedStatus.value,
     items: [
       {
-        id: Math.floor(Math.random() * 100),  // Genarating random id
+        id: Math.floor(Math.random() * 100),  // Generating random id
         product: 'Sample Product',
         name: newOrder.value.itemName,
         price: 100
@@ -90,5 +132,4 @@ const saveOrder = () => {
 
   closeDialog();
 };
-
 </script>
