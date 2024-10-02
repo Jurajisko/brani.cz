@@ -1,9 +1,11 @@
 <template>
   <v-container>
     <Snackbar :snackbar="showSnack" @close="showSnack = false" />
-    <Dialog :show="showDialog" @close="showDialog = false"></Dialog>
+    
+    <!-- Dialog for editing order -->
+    <Dialog :show="showDialog" :order="editedOrder" @close="closeDialog" @save="updateOrder" />
 
-    <!-- New component for new order -->
+    <!-- NewOrder dialog Component -->
     <NewOrder v-if="showNewOrderDialog" @close="closeDialog" @save="addOrder" />
 
     <v-data-table :headers="headers" :items="items" :items-per-page="5" class="elevation-1">
@@ -29,25 +31,26 @@ import { useStore } from 'vuex';
 import Dialog from './Dialog.vue';
 import Snackbar from './Snackbar.vue';
 
-// Import NewOrder component
-import NewOrder from './NewOrder.vue';
+import NewOrder from './NewOrder.vue';  // Import new component
 
-const store = useStore()
-const showDialog = ref(false)
-const showSnack = ref(false)
+const store = useStore();
+const showDialog = ref(false);
+const showSnack = ref(false);
+const editedOrder = ref(null); // Object for currently edited order
 
-// Constant for opening/closing new order dialog
-const showNewOrderDialog = ref(false)
+// Variable to open/close new order dialog
+const showNewOrderDialog = ref(false);
 
-// Opening dialog window
+// Open new order dialog
 const openDialog = () => {
   showNewOrderDialog.value = true;
-}
+};
 
-// Close dialog window
+// Close new order dialog
 const closeDialog = () => {
   showNewOrderDialog.value = false;
-}
+  showDialog.value = false;
+};
 
 // Define table headers
 const headers = [
@@ -59,41 +62,41 @@ const headers = [
 ];
 
 // Random data for the table
-const items = computed(() => store.getters['orders/getOrders'])
+const items = computed(() => store.getters['orders/getOrders']);
 
+// Edit order
 const edit = (order) => {
+  editedOrder.value = order; // Set order to be edited
   showDialog.value = true;
-}
+};
 
-// save new order (in Orders.vue)
+// Save new order
 const addOrder = (orderData) => {  
-  store.dispatch('orders/createOrder', orderData)
+  store.dispatch('orders/createOrder', orderData) // Send new order to backend Vuex
     .then(() => {
-      store.dispatch('orders/fetchOrders');
-      showSnack.value = true;
+      console.log('Order created:', orderData);
+      store.dispatch('orders/fetchOrders'); // Actualization list order of table
+      showSnack.value = true; // Show success saved
     })
     .catch((error) => {
       console.error('Error creating order:', error);
     });
 
-  closeDialog();  // Close dialog
+  closeDialog(); // close dialog
 };
 
-
-// Save updated order
+// Update order with new state
 const updateOrder = (updatedOrder) => {
-  // console.log('Uložená objednávka:', updatedOrder);
-
-  store.dispatch('orders/updateOrder', updatedOrder)
+  store.dispatch('orders/updateOrder', updatedOrder) // Dispatch to Vuex for backend update
     .then(() => {
-      closeDialog();  // Close dialog
+      store.dispatch('orders/fetchOrders'); // Refresh orders list
+      closeDialog();  // Close dialog after save
+      showSnack.value = true; // Show snack-bar for confirmation
     })
     .catch((error) => {
-      console.error('Chyba pri aktualizácii objednávky:', error);
+      console.error('Error updating order:', error);
     });
 };
-
-
 </script>
 
 <style scoped>

@@ -5,12 +5,12 @@
         <span>Upravit objednávku</span>
       </v-card-title>
       <v-card-text>
-        <v-select label="Status" :items="states"></v-select>
+        <v-select label="Status" :items="states" v-model="editedOrderState"></v-select>
       </v-card-text>
       <v-card-actions class="mx-1">
         <v-spacer></v-spacer>
         <v-btn @click="emit('close')">Zavřít</v-btn>
-        <v-btn color="success" variant="tonal">Upravit</v-btn>
+        <v-btn color="success" variant="tonal" @click="saveChanges">Upravit</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -31,7 +31,6 @@ const states = [
   { title: 'Zrušeno', value: 'canceled' }
 ];
 
-
 const emit = defineEmits(['close', 'save']);
 
 const shouldBeVisible = computed({
@@ -39,20 +38,22 @@ const shouldBeVisible = computed({
   set() { emit('close') },
 })
 
-// is 'props.order' exists?
 const orderExists = computed(() => props.order && props.order.state);
 
-// Default state of the order
-const editedOrderState = ref(null);
+// Initialize the order state based on the current order's state
+const editedOrderState = ref(props.order ? props.order.state : 'pending');
+
+watch(() => props.order, (newOrder) => {
+  if (newOrder && newOrder.state) {
+    editedOrderState.value = newOrder.state;  // Rebind when new order is passed in props
+  }
+}, { immediate: true });
 
 const saveChanges = () => {
   if (orderExists.value) {
     emit('save', { ...props.order, state: editedOrderState.value });
     emit('close');
   }
-
 }
 
 </script>
-
-<style lang="scss" scoped></style>

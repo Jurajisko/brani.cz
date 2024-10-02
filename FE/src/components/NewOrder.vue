@@ -31,19 +31,18 @@
 
 <script setup>
 import { ref, defineEmits } from 'vue';
-import { useStore } from 'vuex';
 
-// Prepare data for new order
+// Prepare order data
 const newOrder = ref({
   customerId: '',
   itemName: '',
-  state: 'Vyřizuje se' // Default state
+  state: 'pending' // defualut value
 });
 
-// State for selected status
-const selectedStatus = ref('pending');
+// State of the new order
+const selectedStatus = ref('Vyřizuje se');
 
-// Setting up status options
+// States for order
 const statusOptions = [
   { name: 'Vyřizuje se', value: 'pending' },
   { name: 'Posláno', value: 'shipped' },
@@ -51,28 +50,35 @@ const statusOptions = [
   { name: 'Zrušeno', value: 'canceled' }
 ];
 
-
 // Emit events
 const emit = defineEmits(['close', 'save']);
 
 const showDialog = ref(true);
 
-const store = useStore(); // Initialize VueX store
-
-// Function to close dialog
+// Function for close dialog
 const closeDialog = () => {
   emit('close');
 }
 
+// Function for saving order
 const saveOrder = () => {
-  // console.log('Saved order:', newOrder.value);
+  // Validation: check if all required fields are filled
+  if (!newOrder.value.customerId) {
+    alert("Prosím, zadajte ID zákazníka.");
+    return;
+  }
+
+  if (!newOrder.value.itemName) {
+    alert("Prosím, zadajte položku objednávky.");
+    return;
+  }
 
   const orderData = {
     customerId: newOrder.value.customerId,
     state: selectedStatus.value,
     items: [
       {
-        id: Math.floor(Math.random() * 100),
+        id: Math.floor(Math.random() * 100),  // Genarating random id
         product: 'Sample Product',
         name: newOrder.value.itemName,
         price: 100
@@ -80,20 +86,9 @@ const saveOrder = () => {
     ]
   };
 
-  // console.log(orderData);
+  emit('save', orderData);  // Emit order
 
-  store.dispatch('orders/createOrder', orderData)
-    .then(response => {
-      console.log('Nová objednávka uložená:', response);
-      emit('save', response);  // Emit for save event
-      closeDialog();           // Close dialog
-    })
-    .catch(error => {
-      console.error('Chyba pri ukladaní objednávky:', error.response ? error.response.data : error.message);
-    })
+  closeDialog();
 };
-
-
-
 
 </script>
