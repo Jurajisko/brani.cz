@@ -3,7 +3,7 @@
     <Snackbar :snackbar="showSnack" @close="showSnack = false" />
     <Dialog :show="showDialog" @close="showDialog = false"></Dialog>
 
-    <!-- Komponenta pre dialógové okno novej objednávky -->
+    <!-- New component for new order -->
     <NewOrder v-if="showNewOrderDialog" @close="closeDialog" @save="addOrder" />
 
     <v-data-table :headers="headers" :items="items" :items-per-page="5" class="elevation-1">
@@ -29,21 +29,22 @@ import { useStore } from 'vuex';
 import Dialog from './Dialog.vue';
 import Snackbar from './Snackbar.vue';
 
-import NewOrder from './NewOrder.vue';  // Import komponenty pre pridávanie objednávok
-
+// Import NewOrder component
+import NewOrder from './NewOrder.vue';
 
 const store = useStore()
 const showDialog = ref(false)
 const showSnack = ref(false)
 
-// Premenná pre otvorenie/zatvorenie dialógu pre novú objednávku
+// Constant for opening/closing new order dialog
 const showNewOrderDialog = ref(false)
-// Otváranie dialógového okna
+
+// Opening dialog window
 const openDialog = () => {
   showNewOrderDialog.value = true;
 }
 
-// Zatváranie dialógového okna
+// Close dialog window
 const closeDialog = () => {
   showNewOrderDialog.value = false;
 }
@@ -64,9 +65,8 @@ const edit = (order) => {
   showDialog.value = true;
 }
 
-const addOrder = (orderData) => {
-  console.log('Prijaté údaje pre novú objednávku:', orderData);
-  
+// save new order (in Orders.vue)
+const addOrder = (orderData) => {  
   store.dispatch('orders/createOrder', orderData)
     .then(() => {
       store.dispatch('orders/fetchOrders');
@@ -76,21 +76,22 @@ const addOrder = (orderData) => {
       console.error('Error creating order:', error);
     });
 
-  closeDialog();
+  closeDialog();  // Close dialog
 };
 
 
-const createOrder = () => {
-  // Simulácia vytvorenia novej objednávky
-  const newOrder = {
-    id: Math.floor(Math.random() * 1000),
-    items: [{ id: 106, product: 'New Product', name: 'Sample Product', price: 100 }],
-    customerId: 3,
-    state: 'pending',
-  };
-  
-  store.dispatch('orders/createOrder', newOrder);
-}
+// Save updated order
+const updateOrder = (updatedOrder) => {
+  // console.log('Uložená objednávka:', updatedOrder);
+
+  store.dispatch('orders/updateOrder', updatedOrder)
+    .then(() => {
+      closeDialog();  // Close dialog
+    })
+    .catch((error) => {
+      console.error('Chyba pri aktualizácii objednávky:', error);
+    });
+};
 
 
 </script>

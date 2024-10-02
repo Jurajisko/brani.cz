@@ -6,11 +6,11 @@
       </v-card-title>
 
       <v-card-text>
-        <v-form>
+        <v-form @submit.prevent="saveOrder">
           <v-text-field v-model="newOrder.customerId" label="ID zákazníka" required></v-text-field>
           <v-text-field v-model="newOrder.itemName" label="Položka objednávky" required></v-text-field>
           
-          <!-- Dropdown pre stav objednávky -->
+          <!-- Dropdown for status order -->
           <v-select 
             v-model="selectedStatus" 
             :items="statusOptions.map(status => status.name)" 
@@ -31,19 +31,19 @@
 
 <script setup>
 import { ref, defineEmits } from 'vue';
-import axios from 'axios';
+import { useStore } from 'vuex';
 
-// Pripravené údaje pre novú objednávku
+// Prepare data for new order
 const newOrder = ref({
   customerId: '',
   itemName: '',
-  state: 'pending' // Přednastavený stav objednávky
+  state: 'Vyřizuje se' // Default state
 });
 
-// Status objednávky (ak ho chceš ukladať samostatne)
+// State for selected status
 const selectedStatus = ref('pending');
 
-// Možnosti pre stav objednávky
+// Setting up status options
 const statusOptions = [
   { name: 'Vyřizuje se', value: 'pending' },
   { name: 'Posláno', value: 'shipped' },
@@ -52,50 +52,45 @@ const statusOptions = [
 ];
 
 
-// Emitovanie udalostí pre zatvorenie a uloženie objednávky
+// Emit events
 const emit = defineEmits(['close', 'save']);
 
 const showDialog = ref(true);
 
-// Funkcia na zatvorenie dialógu
+const store = useStore(); // Initialize VueX store
+
+// Function to close dialog
 const closeDialog = () => {
   emit('close');
 }
 
-const isSubmitting = ref(false);
-
 const saveOrder = () => {
-  console.log('Ukladám objednávku'); // Kontrola spustenia
-
-  if (isSubmitting.value) return;  // Zabráni ďalšiemu volaniu, ak sa práve odosiela
-
-  isSubmitting.value = true;
+  // console.log('Saved order:', newOrder.value);
 
   const orderData = {
-    customerId: newOrder.value.customerId,  // ID zákazníka
-    state: selectedStatus.value,            // Stav objednávky
+    customerId: newOrder.value.customerId,
+    state: selectedStatus.value,
     items: [
       {
-        id: Math.floor(Math.random() * 1000), // Generované ID pre položku
-        product: 'Sample Product',            // Názov produktu (môže byť dynamický)
-        name: newOrder.value.itemName,        // Názov položky z formulára
-        price: 100                            // Cena položky (môže byť dynamická)
+        id: Math.floor(Math.random() * 100),
+        product: 'Sample Product',
+        name: newOrder.value.itemName,
+        price: 100
       }
     ]
   };
-  
-  axios.post('http://localhost:3001/api/orders', orderData)
+
+  // console.log(orderData);
+
+  store.dispatch('orders/createOrder', orderData)
     .then(response => {
-      console.log('Nová objednávka uložená:', response.data);
-      emit('save', response.data);  // Emit uložené objednávky
-      closeDialog();                // Zatvorenie dialógu
+      console.log('Nová objednávka uložená:', response);
+      emit('save', response);  // Emit for save event
+      closeDialog();           // Close dialog
     })
     .catch(error => {
-      console.error('Chyba pri ukladaní objednávky:', error);
+      console.error('Chyba pri ukladaní objednávky:', error.response ? error.response.data : error.message);
     })
-    .finally(() => {
-      isSubmitting.value = false;  // Resetovanie po odoslaní
-    });
 };
 
 

@@ -17,10 +17,11 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps({
-  show: Boolean
+  show: Boolean,
+  order: Object
 })
 
 const states = [
@@ -31,12 +32,26 @@ const states = [
 ];
 
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'save']);
 
 const shouldBeVisible = computed({
   get() { return props.show },
   set() { emit('close') },
 })
+
+// is 'props.order' exists?
+const orderExists = computed(() => props.order && props.order.state);
+
+// Default state of the order
+const editedOrderState = ref(null);
+
+const saveChanges = () => {
+  if (orderExists.value) {
+    emit('save', { ...props.order, state: editedOrderState.value });
+    emit('close');
+  }
+
+}
 
 </script>
 
