@@ -7,12 +7,16 @@
 
       <v-card-text>
         <v-form @submit.prevent="saveOrder">
-          <v-text-field 
-            v-model="newOrder.customerId" 
-            label="ID zákazníka" 
-            :error-messages="customerIdError"
-            required>
-          </v-text-field>
+          <v-select 
+            v-model="selectedUser" 
+            :items="userOptions" 
+            item-text="title"
+            item-value="value"
+            :error-messages="userError"
+            label="Zákazník" 
+            required
+          />
+
           <v-text-field 
             v-model="newOrder.itemName" 
             label="Položka objednávky" 
@@ -23,7 +27,9 @@
           <!-- Dropdown for status order -->
           <v-select 
             v-model="selectedStatus" 
-            :items="statusOptions.map(status => status.name)" 
+            :items="statusOptions" 
+            item-text="title"
+            item-value="value"
             label="Stav objednávky" 
             required
           />
@@ -40,7 +46,8 @@
 </template>
 
 <script setup>
-import { ref, defineEmits } from 'vue';
+import { ref, defineEmits, onMounted } from 'vue';
+import axios from 'axios';
 
 // Prepare order data
 const newOrder = ref({
@@ -50,15 +57,35 @@ const newOrder = ref({
 });
 
 // State of the new order
-const selectedStatus = ref('Vyřizuje se');
+const selectedStatus = ref('pending');
 
 // States for order
 const statusOptions = [
-  { name: 'Vyřizuje se', value: 'pending' },
-  { name: 'Posláno', value: 'shipped' },
-  { name: 'Doručeno', value: 'delivered' },
-  { name: 'Zrušeno', value: 'canceled' }
+  { title: 'Vyřizuje se', value: 'pending' },
+  { title: 'Posláno', value: 'shipped' },
+  { title: 'Doručeno', value: 'delivered' },
+  { title: 'Zrušeno', value: 'canceled' }
 ];
+
+// State of the new order
+const selectedUser = ref('Vyberte meno');
+// console.log('Selected user:', selectedUser.value);
+
+// Get customer name based on customerId
+const userOptions = ref([]);  // This should contain the list of users
+
+onMounted(async () => {
+  try {
+    const response = await axios.get('http://localhost:3001/api/users');
+    userOptions.value = response.data.map(user => ({
+      title: user.name,
+      value: user.id
+    }));
+
+  } catch (error) {
+    console.error('Error fetching users:', error);
+  }
+});
 
 // Emit events
 const emit = defineEmits(['close', 'save']);
@@ -66,7 +93,7 @@ const emit = defineEmits(['close', 'save']);
 const showDialog = ref(true);
 
 // Error messages
-const customerIdError = ref('');
+const userError = ref('');
 const itemNameError = ref('');
 
 // Function to sanitize text inputs
@@ -84,20 +111,16 @@ const closeDialog = () => {
 // Function for saving order
 const saveOrder = () => {
   // Reset error messages
-  customerIdError.value = '';
+  userError.value = '';
   itemNameError.value = '';
 
   // Validation: check if all required fields are filled
   let isValid = true;
 
   // Check if customerId is empty
-  if (!newOrder.value.customerId) {
-    customerIdError.value = "Prosím, zadajte ID zákazníka.";
-    isValid = false;
-  }
-  // Check if customerId contains only numbers
-  else if (!/^\d+$/.test(newOrder.value.customerId)) {
-    customerIdError.value = "ID zákazníka môže obsahovať iba čísla.";
+ // Check if selectedUser is empty (if no customer is selected)
+ if (!selectedUser.value || selectedUser.value === 'Vyberte meno') {
+    userError.value = "Prosím, vyberte meno zákazníka.";
     isValid = false;
   }
 
@@ -116,7 +139,7 @@ const saveOrder = () => {
   }
 
   const orderData = {
-    customerId: newOrder.value.customerId,
+    customerId: selectedUser.value,
     state: selectedStatus.value,
     items: [
       {
@@ -127,6 +150,7 @@ const saveOrder = () => {
       }
     ]
   };
+  // console.log('Order data:', orderData);
 
   emit('save', orderData);  // Emit order
 
